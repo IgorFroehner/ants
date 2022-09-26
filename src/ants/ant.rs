@@ -123,15 +123,14 @@ pub fn draw_ant(
     }
 }
 
-fn new_rand_position(x: i32, y: i32, board: &Board) -> Option<(i32, i32)> {
+fn new_rand_position(x: i32, y: i32, board: &Board) -> (i32, i32) {
     let mut rng = thread_rng();
     let move_vec = vec![(0, 1), (1, 0), (-1, 0), (0, -1)];
     let new_move = move_vec.choose(&mut rng).unwrap();
-    let (new_x, new_y) = (x + new_move.0, y + new_move.1);
-    if board.valid_position(new_x, new_y) {
-        return Some((new_x, new_y));
-    }
-    None
+    let new_x = (board.size + (x + new_move.0)) % board.size;
+    let new_y = (board.size + (y + new_move.1)) % board.size;
+
+    (new_x, new_y)
 }
 
 pub fn move_ant(
@@ -142,12 +141,9 @@ pub fn move_ant(
     mut timer: ResMut<AntTimer>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
-        for _ in 0..100000 {
+        for _ in 0..10000 {
             for mut ant in query_ants.iter_mut() {
-                let (new_x, new_y) = match new_rand_position(ant.x, ant.y, &board) {
-                    None => continue,
-                    Some((x, y)) => (x, y)
-                };
+                let (new_x, new_y) = new_rand_position(ant.x, ant.y, &board);
 
                 let radius = 1;
                 let mut food_amount = 0.0;
@@ -155,17 +151,18 @@ pub fn move_ant(
 
                 for x in ant.x - radius..(ant.x + radius + 1) {
                     for y in ant.y - radius..(ant.y + radius + 1) {
-                        if board.valid_position(x, y) {
-                            if x == ant.x && y == ant.y {
-                                continue;
-                            }
-                            let cell = query_cells.get(board.get_cell_entity(x, y)).unwrap();
+                        let x = (board.size + x) % board.size;
+                        let y = (board.size + y) % board.size;
 
-                            if cell.food {
-                                food_amount += 1.0;
-                            }
-                            n_cells += 1.0;
+                        if x == ant.x && y == ant.y {
+                            continue;
                         }
+                        let cell = query_cells.get(board.get_cell_entity(x, y)).unwrap();
+
+                        if cell.food {
+                            food_amount += 1.0;
+                        }
+                        n_cells += 1.0;
                     }
                 }
 

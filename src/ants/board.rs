@@ -34,10 +34,6 @@ impl Board {
         self.cells[x_usize][y_usize]
     }
 
-    pub fn valid_position(&self, x: i32, y: i32) -> bool {
-        x >= 0 && y >= 0 && x < self.size && y < self.size
-    }
-
     pub fn rand_position(&self) -> (i32, i32) {
         let mut rng = thread_rng();
         (

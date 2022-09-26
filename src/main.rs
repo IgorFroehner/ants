@@ -20,10 +20,10 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_plugin(ants::ant_plugin::AntPlugin {
-            n_ants: 10,
-            n_food: 1000,
-            board_size: 50,
-            ant_timer: 1.0 / 200.0,
+            n_ants: 100,
+            n_food: 3000,
+            board_size: 100,
+            ant_timer: 0.0001,
         })
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_startup_system(start_camera)
