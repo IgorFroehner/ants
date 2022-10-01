@@ -1,49 +1,29 @@
 
 use bevy::prelude::*;
 
-use super::params::{FOOD_COLOR, BOARD_COLOR};
+use super::params::{ITEM_COLOR, BOARD_COLOR};
 
 #[derive(Component, Clone)]
 pub struct Cell {
-    pub food: bool
+    pub item: Option<Entity>
 }
 
 impl Cell {
-    pub fn new(food: bool) -> Self {
-        Cell { food }
-    }
-
-    pub fn leave_food(&mut self) -> Option<()> {
-        match self.food {
-            true => None,
-            false => {
-                self.food = true;
-                Some(())
-            }
-        }
-    }
-
-    pub fn pickup_food(&mut self) -> Option<()> {
-        match self.food {
-            false => None,
-            true => {
-                self.food = false;
-                Some(())
-            }
-        }
+    pub fn new() -> Self {
+        Cell { item: None }
     }
 }
 
 impl Default for Cell {
     fn default() -> Self {
-        Cell::new(false)
+        Cell::new()
     }
 }
 
 pub fn draw_food(mut query: Query<(&mut Cell, &mut Sprite), Changed<Cell>>) {
     for (cell, mut sprite) in query.iter_mut() {
-        if cell.food {
-            sprite.color = FOOD_COLOR;
+        if cell.item.is_some() {
+            sprite.color = ITEM_COLOR;
         } else {
             sprite.color = BOARD_COLOR;
         }

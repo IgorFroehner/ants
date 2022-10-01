@@ -3,7 +3,7 @@ use std::{convert::TryInto};
 use bevy::prelude::*;
 use rand::{distributions::Uniform, prelude::Distribution, thread_rng};
 
-use super::{cell::*, params::Params};
+use super::cell::Cell;
 
 pub struct Board {
     pub size: i32,
@@ -84,27 +84,6 @@ pub fn setup_board(mut commands: Commands, windows: Res<Windows>, mut board: Res
                 .id();
 
             board.set_cell_entity(x, y, entity);
-        }
-    }
-}
-
-pub fn setup_food(
-    board: ResMut<Board>,
-    params: Res<Params>,
-    mut query: Query<&mut Cell>,
-) {
-    if board.size * board.size < params.food {
-        panic!("There are more food then cells in the board.");
-    }
-
-    let mut cont = 0;
-    while cont < params.food {
-        let (x, y) = board.rand_position();
-
-        let mut cell = query.get_mut(board.get_cell_entity(x, y)).unwrap();
-
-        if cell.leave_food().is_some() {
-            cont += 1;
         }
     }
 }

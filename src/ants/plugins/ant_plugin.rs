@@ -1,0 +1,45 @@
+use bevy::prelude::*;
+
+use crate::ants::{ant, board, cell, item, params};
+
+pub struct AntPlugin {
+    pub n_ants: i32,
+    pub n_food: i32,
+    pub max_iterations: i64,
+    pub iterations_per_frame: i64,
+    pub board_size: i32,
+    pub ant_timer: f32,
+}
+
+impl Default for AntPlugin {
+    fn default() -> Self {
+        Self {
+            n_ants: 50,
+            n_food: 1000,
+            max_iterations: 1_000_000,
+            iterations_per_frame: 10000,
+            board_size: 70,
+            ant_timer: 0.000001,
+        }
+    }
+}
+
+impl Plugin for AntPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(params::Params::new(
+            self.n_ants,
+            self.n_food,
+            self.max_iterations,
+            self.iterations_per_frame,
+        ))
+        .init_resource::<board::Board>()
+        .insert_resource(board::Board::new(self.board_size))
+        .insert_resource(ant::AntTimer(Timer::from_seconds(self.ant_timer, true)))
+        .add_startup_system_to_stage(StartupStage::PreStartup, board::setup_board)
+        .add_startup_system(ant::setup_ants)
+        .add_startup_system(item::setup_item)
+        .add_system(ant::move_ant)
+        .add_system(cell::draw_food)
+        .add_system(ant::draw_ant);
+    }
+}

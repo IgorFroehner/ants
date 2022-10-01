@@ -1,11 +1,10 @@
-
 use std::f64::consts::E;
 
 use bevy::prelude::*;
 
-use rand::Rng;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+use rand::Rng;
 
 use crate::ants::board::*;
 use crate::ants::cell::*;
@@ -20,16 +19,12 @@ pub struct AntTimer(pub Timer);
 pub struct Ant {
     x: i32,
     y: i32,
-    loaded: bool,
+    item: Option<Entity>,
 }
 
 impl Ant {
     pub fn new(x: i32, y: i32) -> Self {
-        Self {
-            x,
-            y,
-            loaded: false,
-        }
+        Self { x, y, item: None }
     }
 
     pub fn set_position(&mut self, x: i32, y: i32) {
@@ -38,21 +33,31 @@ impl Ant {
     }
 
     pub fn prob(x: f64) -> f64 {
-        // 1.0 / (1.0 + ((-5.0*E*(x-0.4)).exp()))
-        1.0 / (1.0 + (E.powf(-E.powf(3.0)*(x-0.43261))))
+        1.0 / (1.0 + (E.powf(-E.powf(3.0) * (x - 0.43261))))
     }
 
-    pub fn ant_action(&mut self, cell: &mut Cell, score: f64) {
+    pub fn ant_action(&mut self, cell: &mut Cell, score: f64, ending: bool) -> bool {
         let prob = Self::prob(score);
 
-        if self.loaded {
-            if thread_rng().gen_bool(prob) && cell.leave_food().is_some() {
-                self.loaded = false;
+        match (&self.item, &cell.item) {
+            (Some(_), None) => {
+                // Ant with item and cell empty
+                if thread_rng().gen_bool(prob) {
+                    cell.item = self.item.take();
+                }
             }
-        } else {
-            if thread_rng().gen_bool(1.0 - prob) && cell.pickup_food().is_some() {
-                self.loaded = true;
+            (None, Some(_)) => {
+                // Ant empty and cell with item
+                if !ending && thread_rng().gen_bool(1.0 - prob) {
+                    self.item = cell.item.take();
+                }
             }
+            (_, _) => {}
+        }
+
+        match self.item {
+            Some(_) => true,
+            None => false,
         }
     }
 }
@@ -111,7 +116,7 @@ pub fn draw_ant(
     let first_position = board.first_position(window);
 
     for (ant, mut transform, mut image) in query.iter_mut() {
-        *image = if ant.loaded {
+        *image = if ant.item.is_some() {
             asset_server.load(ANT_LOADED_IMAGE)
         } else {
             asset_server.load(ANT_IMAGE)
@@ -139,9 +144,13 @@ pub fn move_ant(
     board: ResMut<Board>,
     time: Res<Time>,
     mut timer: ResMut<AntTimer>,
+    mut params: ResMut<Params>,
 ) {
-    if timer.0.tick(time.delta()).just_finished() {
-        for _ in 0..10000 {
+    if timer.0.tick(time.delta()).just_finished() && !params.finished() {
+        for _ in 0..params.iterations_per_frame {
+            if params.finished() {
+                break;
+            };
             for mut ant in query_ants.iter_mut() {
                 let (new_x, new_y) = new_rand_position(ant.x, ant.y, &board);
 
@@ -159,7 +168,7 @@ pub fn move_ant(
                         }
                         let cell = query_cells.get(board.get_cell_entity(x, y)).unwrap();
 
-                        if cell.food {
+                        if cell.item.is_some() {
                             food_amount += 1.0;
                         }
                         n_cells += 1.0;
@@ -172,9 +181,58 @@ pub fn move_ant(
 
                 let food_score: f64 = food_amount / n_cells;
 
-                ant.ant_action(&mut cell, food_score);
+                ant.ant_action(&mut cell, food_score, params.finished());
 
                 ant.set_position(new_x, new_y);
+            }
+        }
+
+        params.max_iterations -= params.iterations_per_frame;
+        println!("max_iterations: {}", params.max_iterations);
+        if params.max_iterations <= 0 {
+            params.finish();
+        }
+
+        if params.finished() {
+            let mut ant_loaded = true;
+            while ant_loaded {
+                ant_loaded = false;
+                for mut ant in query_ants.iter_mut() {
+                    let (new_x, new_y) = new_rand_position(ant.x, ant.y, &board);
+
+                    let radius = 1;
+                    let mut food_amount = 0.0;
+                    let mut n_cells = 0.0;
+
+                    for x in ant.x - radius..(ant.x + radius + 1) {
+                        for y in ant.y - radius..(ant.y + radius + 1) {
+                            let x = (board.size + x) % board.size;
+                            let y = (board.size + y) % board.size;
+
+                            if x == ant.x && y == ant.y {
+                                continue;
+                            }
+                            let cell = query_cells.get(board.get_cell_entity(x, y)).unwrap();
+
+                            if cell.item.is_some() {
+                                food_amount += 1.0;
+                            }
+                            n_cells += 1.0;
+                        }
+                    }
+
+                    let mut cell = query_cells
+                        .get_mut(board.get_cell_entity(ant.x, ant.y))
+                        .expect("Error while retrieving the prev cells");
+
+                    let food_score: f64 = food_amount / n_cells;
+
+                    if ant.ant_action(&mut cell, food_score, params.finished()) {
+                        ant_loaded = true;
+
+                        ant.set_position(new_x, new_y);
+                    }
+                }
             }
         }
     }
