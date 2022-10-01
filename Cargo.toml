@@ -9,6 +9,8 @@ edition = "2021"
 bevy = { version = "0.8.1", features = ["dynamic"] }
 rand = "0.8.4"
 plotlib = "0.5.1"
+image = "0.24.4"
+queues = "1.1.0"
 
 # # Enable a small amount of optimization in debug mode
 [profile.dev]
