@@ -10,6 +10,7 @@ use crate::ants::board::*;
 use crate::ants::cell::*;
 use crate::ants::params::*;
 use crate::ants::simulation_state::SimulationState;
+use crate::move_vec;
 
 pub const ANT_IMAGE: &str = "ant.png";
 pub const ANT_LOADED_IMAGE: &str = "loaded_ant.png";
@@ -131,7 +132,6 @@ pub fn draw_ant(
 
 fn new_rand_position(x: i32, y: i32, board: &Board) -> (i32, i32) {
     let mut rng = thread_rng();
-    let move_vec = vec![(0, 1), (1, 0), (-1, 0), (0, -1)];
     let new_move = move_vec.choose(&mut rng).unwrap();
     let new_x = (board.size + (x + new_move.0)) % board.size;
     let new_y = (board.size + (y + new_move.1)) % board.size;
