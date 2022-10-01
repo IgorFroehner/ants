@@ -9,6 +9,7 @@ use rand::Rng;
 use crate::ants::board::*;
 use crate::ants::cell::*;
 use crate::ants::params::*;
+use crate::ants::simulation_state::SimulationState;
 
 pub const ANT_IMAGE: &str = "ant.png";
 pub const ANT_LOADED_IMAGE: &str = "loaded_ant.png";
@@ -145,62 +146,63 @@ pub fn move_ant(
     time: Res<Time>,
     mut timer: ResMut<AntTimer>,
     mut params: ResMut<Params>,
+    mut state: ResMut<SimulationState>,
 ) {
-    if timer.0.tick(time.delta()).just_finished() && !params.finished() {
-        for _ in 0..params.iterations_per_frame {
-            if params.finished() {
-                break;
-            };
-            for mut ant in query_ants.iter_mut() {
-                let (new_x, new_y) = new_rand_position(ant.x, ant.y, &board);
-
-                let radius = 1;
-                let mut food_amount = 0.0;
-                let mut n_cells = 0.0;
-
-                for x in ant.x - radius..(ant.x + radius + 1) {
-                    for y in ant.y - radius..(ant.y + radius + 1) {
-                        let x = (board.size + x) % board.size;
-                        let y = (board.size + y) % board.size;
-
-                        if x == ant.x && y == ant.y {
-                            continue;
+    match *state {
+        SimulationState::SIMULATING => {
+            if timer.0.tick(time.delta()).just_finished() {
+                for _ in 0..params.iterations_per_frame {
+                    for mut ant in query_ants.iter_mut() {
+                        let (new_x, new_y) = new_rand_position(ant.x, ant.y, &board);
+        
+                        let radius = params.radius as i32;
+                        let mut food_amount = 0.0;
+                        let mut n_cells = 0.0;
+        
+                        for x in ant.x - radius..(ant.x + radius + 1) {
+                            for y in ant.y - radius..(ant.y + radius + 1) {
+                                let x = (board.size + x) % board.size;
+                                let y = (board.size + y) % board.size;
+        
+                                if x == ant.x && y == ant.y {
+                                    continue;
+                                }
+                                let cell = query_cells.get(board.get_cell_entity(x, y)).unwrap();
+        
+                                if cell.item.is_some() {
+                                    food_amount += 1.0;
+                                }
+                                n_cells += 1.0;
+                            }
                         }
-                        let cell = query_cells.get(board.get_cell_entity(x, y)).unwrap();
-
-                        if cell.item.is_some() {
-                            food_amount += 1.0;
-                        }
-                        n_cells += 1.0;
+        
+                        let mut cell = query_cells
+                            .get_mut(board.get_cell_entity(ant.x, ant.y))
+                            .expect("Error while retrieving the prev cells");
+        
+                        let food_score: f64 = food_amount / n_cells;
+        
+                        ant.ant_action(&mut cell, food_score, false);
+        
+                        ant.set_position(new_x, new_y);
                     }
                 }
-
-                let mut cell = query_cells
-                    .get_mut(board.get_cell_entity(ant.x, ant.y))
-                    .expect("Error while retrieving the prev cells");
-
-                let food_score: f64 = food_amount / n_cells;
-
-                ant.ant_action(&mut cell, food_score, params.finished());
-
-                ant.set_position(new_x, new_y);
+        
+                params.max_iterations -= params.iterations_per_frame;
+                println!("{}", params.max_iterations);
+                if params.max_iterations <= 0 {
+                    *state = SimulationState::FINISHING;
+                }
             }
-        }
-
-        params.max_iterations -= params.iterations_per_frame;
-        println!("max_iterations: {}", params.max_iterations);
-        if params.max_iterations <= 0 {
-            params.finish();
-        }
-
-        if params.finished() {
+        },
+        SimulationState::FINISHING => {
             let mut ant_loaded = true;
             while ant_loaded {
                 ant_loaded = false;
                 for mut ant in query_ants.iter_mut() {
                     let (new_x, new_y) = new_rand_position(ant.x, ant.y, &board);
 
-                    let radius = 1;
+                    let radius = params.radius as i32;
                     let mut food_amount = 0.0;
                     let mut n_cells = 0.0;
 
@@ -227,13 +229,16 @@ pub fn move_ant(
 
                     let food_score: f64 = food_amount / n_cells;
 
-                    if ant.ant_action(&mut cell, food_score, params.finished()) {
+                    if ant.ant_action(&mut cell, food_score, true) {
                         ant_loaded = true;
 
                         ant.set_position(new_x, new_y);
                     }
                 }
             }
+
+            *state = SimulationState::FINISHED;
         }
-    }
+        _ => { },
+    };
 }

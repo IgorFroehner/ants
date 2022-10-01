@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::ants::{ant, board, cell, item, params};
+use crate::ants::{ant, board, cell, input, item, metrics, params, simulation_state};
 
 pub struct AntPlugin {
     pub n_ants: i32,
@@ -9,6 +9,7 @@ pub struct AntPlugin {
     pub iterations_per_frame: i64,
     pub board_size: i32,
     pub ant_timer: f32,
+    pub radius: u8,
 }
 
 impl Default for AntPlugin {
@@ -17,9 +18,10 @@ impl Default for AntPlugin {
             n_ants: 50,
             n_food: 1000,
             max_iterations: 1_000_000,
-            iterations_per_frame: 10000,
+            iterations_per_frame: 100_000,
             board_size: 70,
             ant_timer: 0.000001,
+            radius: 1,
         }
     }
 }
@@ -31,8 +33,10 @@ impl Plugin for AntPlugin {
             self.n_food,
             self.max_iterations,
             self.iterations_per_frame,
+            self.radius,
         ))
         .init_resource::<board::Board>()
+        .insert_resource(simulation_state::SimulationState::INITIALIZED)
         .insert_resource(board::Board::new(self.board_size))
         .insert_resource(ant::AntTimer(Timer::from_seconds(self.ant_timer, true)))
         .add_startup_system_to_stage(StartupStage::PreStartup, board::setup_board)
@@ -40,6 +44,8 @@ impl Plugin for AntPlugin {
         .add_startup_system(item::setup_item)
         .add_system(ant::move_ant)
         .add_system(cell::draw_food)
-        .add_system(ant::draw_ant);
+        .add_system(ant::draw_ant)
+        .add_system(metrics::calculate_metrics)
+        .add_system(input::keyboard_input);
     }
 }
