@@ -1,6 +1,8 @@
-use bevy::prelude::*;
+use std::time::Duration;
 
-use crate::ants::{ant, board, cell, input, item, metrics, params, simulation_state};
+use bevy::{prelude::*};
+
+use crate::ants::{ant, board, cell, input, item, metrics, params, simulation_state, time};
 
 pub struct AntPlugin {
     pub n_ants: i32,
@@ -37,6 +39,7 @@ impl Plugin for AntPlugin {
         ))
         .init_resource::<board::Board>()
         .insert_resource(simulation_state::SimulationState::INITIALIZED)
+        .insert_resource(time::Stopwatch { total: Duration::from_secs(0) })
         .insert_resource(board::Board::new(self.board_size))
         .insert_resource(ant::AntTimer(Timer::from_seconds(self.ant_timer, true)))
         .add_startup_system_to_stage(StartupStage::PreStartup, board::setup_board)
@@ -46,6 +49,7 @@ impl Plugin for AntPlugin {
         .add_system(cell::draw_food)
         .add_system(ant::draw_ant)
         .add_system(metrics::calculate_metrics)
-        .add_system(input::keyboard_input);
+        .add_system(input::keyboard_input)
+        .add_system(time::measuere_time);
     }
 }

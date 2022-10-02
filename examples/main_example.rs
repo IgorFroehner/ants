@@ -26,9 +26,10 @@ fn main() {
             n_ants: 100,
             n_food: 4000,
             board_size: 100,
-            ant_timer: 0.0001,
-            iterations_per_frame: 1_000,
-            max_iterations: 1_000_000
+            ant_timer: 0.000001,
+            iterations_per_frame: 10_000,
+            max_iterations: 1_000_000,
+            radius: 1,
         })
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_startup_system(start_camera)

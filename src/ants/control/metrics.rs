@@ -1,20 +1,24 @@
 use bevy::{prelude::*};
 
-use crate::{ants::{board::{Board, self}, cell::Cell}, move_vec};
+use crate::{ants::{board::{Board}, cell::Cell}, MOVE_VEC};
 
 use queues::*;
 
 
-use super::simulation_state::SimulationState;
+use super::{simulation_state::SimulationState, time::Stopwatch};
 
 pub fn calculate_metrics(
     mut state: ResMut<SimulationState>,
     board: Res<Board>,
     query_cells: Query<&mut Cell>,
+    stopwatch: Res<Stopwatch>,
 ) {
     match *state {
         SimulationState::FINISHED => {
             calculate_biggest_and_number_of_cluster(board, query_cells);
+            
+            println!("time: {} seconds", stopwatch.total.as_secs());
+            
             *state = SimulationState::ENDED;
         },
         _ => {},
@@ -53,9 +57,7 @@ fn calculate_biggest_and_number_of_cluster(board: Res<Board>, query_cells: Query
                     // vis[ukx][uky] = true;
                     cont += 1;
 
-                    println!("{}, {}", kx, ky);
-
-                    for (move_x, move_y) in &move_vec {
+                    for (move_x, move_y) in &MOVE_VEC {
                         let (adj_x, adj_y) = get_pos(move_x + kx, move_y + ky, board.size);
                         let uadj_x: usize = adj_x.try_into().unwrap();
                         let uadj_y: usize = adj_y.try_into().unwrap();
