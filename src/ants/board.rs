@@ -1,7 +1,9 @@
 use std::{convert::TryInto};
 
 use bevy::prelude::*;
-use rand::{distributions::Uniform, prelude::Distribution, thread_rng};
+use rand::{distributions::Uniform, prelude::{Distribution, SliceRandom}, thread_rng};
+
+use crate::MOVE_VEC;
 
 use super::cell::Cell;
 
@@ -48,6 +50,15 @@ impl Board {
     
     pub fn first_position(&self, window: &Window) -> f32 {
         (-window.width() / 2.0) + self.cell_size(window) / 2.0
+    }
+
+    pub fn rand_move(&self, x: i32, y: i32) -> (i32, i32) {
+        let mut rng = thread_rng();
+        let new_move = MOVE_VEC.choose(&mut rng).unwrap();
+        let new_x = (self.size + (x + new_move.0)) % self.size;
+        let new_y = (self.size + (y + new_move.1)) % self.size;
+    
+        (new_x, new_y)
     }
 }
 

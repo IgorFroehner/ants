@@ -3,7 +3,20 @@ use bevy::prelude::*;
 use super::{board::Board, params::Params, cell::Cell};
 
 #[derive(Component)]
-pub struct Item;
+pub struct Item {
+    data: Vec<f64>,
+}
+
+impl Item {
+    pub fn difference(&self, other: &Item) -> f64 {
+        let mut diff = 0.0;
+        for i in 0..self.data.len() {
+            diff += self.data[i] - other.data[i];
+        }
+        diff
+    }
+}
+
 
 pub fn setup_item(
     mut commands: Commands,
@@ -24,7 +37,7 @@ pub fn setup_item(
         if cell.item.is_none() {
             let entity = commands
                 .spawn()
-                .insert(Item { } )
+                .insert(Item { data: vec![0.0] } )
                 .id();
 
             cell.item = Some(entity);

@@ -13,7 +13,6 @@ pub fn measuere_time(time: Res<Time>, mut stopwatch: ResMut<Stopwatch>, state: R
     match *state {
         SimulationState::SIMULATING => {
             stopwatch.total += time.delta();
-            println!("{}", stopwatch.total.as_secs());
         },
         _ => { },
     }

@@ -2,7 +2,6 @@ use std::f64::consts::E;
 
 use bevy::prelude::*;
 
-use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rand::Rng;
 
@@ -10,7 +9,7 @@ use crate::ants::board::*;
 use crate::ants::cell::*;
 use crate::ants::params::*;
 use crate::ants::simulation_state::SimulationState;
-use crate::{MOVE_VEC, ANT_IMAGE, ANT_LOADED_IMAGE};
+use crate::{ANT_IMAGE, ANT_LOADED_IMAGE};
 
 pub struct AntTimer(pub Timer);
 
@@ -127,15 +126,6 @@ pub fn draw_ant(
     }
 }
 
-fn new_rand_position(x: i32, y: i32, board: &Board) -> (i32, i32) {
-    let mut rng = thread_rng();
-    let new_move = MOVE_VEC.choose(&mut rng).unwrap();
-    let new_x = (board.size + (x + new_move.0)) % board.size;
-    let new_y = (board.size + (y + new_move.1)) % board.size;
-
-    (new_x, new_y)
-}
-
 pub fn move_ant(
     mut query_ants: Query<&mut Ant>,
     mut query_cells: Query<&mut Cell>,
@@ -150,7 +140,7 @@ pub fn move_ant(
             if timer.0.tick(time.delta()).just_finished() {
                 for _ in 0..params.iterations_per_frame {
                     for mut ant in query_ants.iter_mut() {
-                        let (new_x, new_y) = new_rand_position(ant.x, ant.y, &board);
+                        let (new_x, new_y) = board.rand_move(ant.x, ant.y);
         
                         let radius = params.radius as i32;
                         let mut food_amount = 0.0;
@@ -197,7 +187,7 @@ pub fn move_ant(
             while ant_loaded {
                 ant_loaded = false;
                 for mut ant in query_ants.iter_mut() {
-                    let (new_x, new_y) = new_rand_position(ant.x, ant.y, &board);
+                    let (new_x, new_y) = board.rand_move(ant.x, ant.y);
 
                     let radius = params.radius as i32;
                     let mut food_amount = 0.0;
