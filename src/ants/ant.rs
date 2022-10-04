@@ -1,4 +1,5 @@
 use std::f64::consts::E;
+use std::thread::current;
 
 use bevy::prelude::*;
 
@@ -10,6 +11,8 @@ use crate::ants::cell::*;
 use crate::ants::params::*;
 use crate::ants::simulation_state::SimulationState;
 use crate::{ANT_IMAGE, ANT_LOADED_IMAGE};
+
+use super::item::Item;
 
 pub struct AntTimer(pub Timer);
 
@@ -129,6 +132,7 @@ pub fn draw_ant(
 pub fn move_ant(
     mut query_ants: Query<&mut Ant>,
     mut query_cells: Query<&mut Cell>,
+    mut query_item: Query<&Item>,
     board: ResMut<Board>,
     time: Res<Time>,
     mut timer: ResMut<AntTimer>,
@@ -138,94 +142,122 @@ pub fn move_ant(
     match *state {
         SimulationState::SIMULATING => {
             if timer.0.tick(time.delta()).just_finished() {
-                for _ in 0..params.iterations_per_frame {
-                    for mut ant in query_ants.iter_mut() {
-                        let (new_x, new_y) = board.rand_move(ant.x, ant.y);
-        
-                        let radius = params.radius as i32;
-                        let mut food_amount = 0.0;
-                        let mut n_cells = 0.0;
-        
-                        for x in ant.x - radius..(ant.x + radius + 1) {
-                            for y in ant.y - radius..(ant.y + radius + 1) {
-                                let x = (board.size + x) % board.size;
-                                let y = (board.size + y) % board.size;
-        
-                                if x == ant.x && y == ant.y {
-                                    continue;
-                                }
-                                let cell = query_cells.get(board.get_cell_entity(x, y)).unwrap();
-        
-                                if cell.item.is_some() {
-                                    food_amount += 1.0;
-                                }
-                                n_cells += 1.0;
-                            }
-                        }
-        
-                        let mut cell = query_cells
-                            .get_mut(board.get_cell_entity(ant.x, ant.y))
-                            .expect("Error while retrieving the prev cells");
-        
-                        let food_score: f64 = food_amount / n_cells;
-        
-                        ant.ant_action(&mut cell, food_score, false);
-        
-                        ant.set_position(new_x, new_y);
-                    }
+                for _ in  0..params.iterations_per_frame {
+                    ant_actions(&mut query_ants, &board, &params, &mut query_cells, &query_item, false);
                 }
-        
+
                 params.max_iterations -= params.iterations_per_frame;
-                // println!("{}", params.max_iterations);
+                println!("{}", params.max_iterations);
                 if params.max_iterations <= 0 {
                     *state = SimulationState::FINISHING;
                 }
             }
         },
         SimulationState::FINISHING => {
-            let mut ant_loaded = true;
-            while ant_loaded {
-                ant_loaded = false;
-                for mut ant in query_ants.iter_mut() {
-                    let (new_x, new_y) = board.rand_move(ant.x, ant.y);
-
-                    let radius = params.radius as i32;
-                    let mut food_amount = 0.0;
-                    let mut n_cells = 0.0;
-
-                    for x in ant.x - radius..(ant.x + radius + 1) {
-                        for y in ant.y - radius..(ant.y + radius + 1) {
-                            let x = (board.size + x) % board.size;
-                            let y = (board.size + y) % board.size;
-
-                            if x == ant.x && y == ant.y {
-                                continue;
-                            }
-                            let cell = query_cells.get(board.get_cell_entity(x, y)).unwrap();
-
-                            if cell.item.is_some() {
-                                food_amount += 1.0;
-                            }
-                            n_cells += 1.0;
-                        }
-                    }
-
-                    let mut cell = query_cells
-                        .get_mut(board.get_cell_entity(ant.x, ant.y))
-                        .expect("Error while retrieving the prev cells");
-
-                    let food_score: f64 = food_amount / n_cells;
-
-                    if ant.ant_action(&mut cell, food_score, true) {
-                        ant_loaded = true;
-
-                        ant.set_position(new_x, new_y);
-                    }
-                }
-            }
+            while ant_actions(&mut query_ants, &board, &params, &mut query_cells, &query_item, true) { }
 
             *state = SimulationState::FINISHED;
         }
         _ => { },
     };
+}
+
+fn pick_action() {
+
+}
+
+fn drop_action() {
+    
+}
+
+fn ant_actions(
+    query_ants: &mut Query<&mut Ant>, 
+    board: &ResMut<Board>, 
+    params: &ResMut<Params>, 
+    query_cells: &mut Query<&mut Cell>,
+    query_item: &Query<&Item>, 
+    ending: bool
+) -> bool {
+    let mut ant_loaded = false;
+
+    for mut ant in query_ants.iter_mut() {
+        let (new_x, new_y) = board.rand_move(ant.x, ant.y);
+
+        let radius = params.radius as i32;
+        let mut diff_sum = 0.0;
+        let mut n_cells = 0.0;
+
+        for x in ant.x - radius..(ant.x + radius + 1) {
+            for y in ant.y - radius..(ant.y + radius + 1) {
+                let x = (board.size + x) % board.size;
+                let y = (board.size + y) % board.size;
+
+                if x == ant.x && y == ant.y {
+                    continue;
+                }
+                let cell = query_cells.get(board.get_cell_entity(x, y)).unwrap();
+
+                match cell.item {
+                    Some(_) => diff_sum += 1.0,
+                    None => {}
+                }
+                    
+                n_cells += 1.0;
+            }
+        }
+
+        let mut cell = query_cells
+            .get_mut(board.get_cell_entity(ant.x, ant.y))
+            .expect("Error while retrieving the prev cells");
+
+        let position_score: f64 = diff_sum / n_cells;
+        let prob = Ant::prob(position_score);
+
+        // If the system is finishing
+        if !ending {
+            match (&ant.item, &cell.item) {
+                (Some(_), None) => {
+                    // Ant with item and cell empty
+                    if thread_rng().gen_bool(prob) {
+                        cell.item = ant.item.take();
+                    }
+                }
+                (None, Some(_)) => {
+                    // Ant empty and cell with item
+                    if thread_rng().gen_bool(1.0 - prob) {
+                        ant.item = cell.item.take();
+                    }
+                }
+                (_, _) => {}
+            }
+
+            match ant.item {
+                Some(_) => ant_loaded = true,
+                None => { }
+            }
+
+            ant.set_position(new_x, new_y);
+        } else {
+            match (&ant.item, &cell.item) {
+                (Some(_), None) => {
+                    // Ant with item and cell empty
+                    if thread_rng().gen_bool(prob) {
+                        cell.item = ant.item.take();
+                    }
+                },
+                (_, _) => {}
+            }
+
+            match ant.item {
+                Some(_) => {
+                    ant_loaded = true;
+
+                    ant.set_position(new_x, new_y);
+                }
+                None => { }
+            }
+        }
+    }
+
+    ant_loaded
 }
