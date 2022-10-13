@@ -1,0 +1,44 @@
+
+use bevy::prelude::*;
+use bevy::window::PresentMode;
+
+use ants::ants::{AntPlugin, ItemPlugin, MetricsPlugin};
+
+const BACKGROUND_COLOR: Color = Color::rgb(0.1, 0.4, 0.1);
+
+const WINDOW_WIDTH: f32 = 800.0;
+const WINDOW_HEIGHT: f32 = 800.0;
+
+fn main() {
+    println!("Running main example!");
+
+    App::new()
+        .insert_resource(WindowDescriptor {
+            title: "Ants".to_string(),
+            width: WINDOW_WIDTH,
+            height: WINDOW_HEIGHT,
+            resizable: false,
+            present_mode: PresentMode::AutoNoVsync,
+            ..default()
+        })
+        .add_plugins(DefaultPlugins)
+        .add_plugin(AntPlugin {
+            n_ants: 3,
+            n_food: 5,
+            board_size: 10,
+            ant_timer: 1.0,
+            iterations_per_frame: 1,
+            max_iterations: 1000,
+            radius: 1,
+            alpha: 1.0,
+        })
+        .add_plugin(ItemPlugin)
+        .add_plugin(MetricsPlugin)
+        .insert_resource(ClearColor(BACKGROUND_COLOR))
+        .add_startup_system(start_camera)
+        .run();
+}
+
+fn start_camera(mut commands: Commands) {
+    commands.spawn_bundle(Camera2dBundle::default());
+}

@@ -9,16 +9,19 @@ pub struct Params {
     pub max_iterations: i64,
     pub iterations_per_frame: i64,
     pub radius: u8,
+    pub k1: f64,
+    pub k2: f64,
+    pub alpha: f64,
 }
 
 impl Params {
-    pub fn new(n_ants: i32, food: i32, max_iterations: i64, iterations_per_frame: i64, radius: u8) -> Self {
-        Params { n_ants, food, max_iterations, iterations_per_frame, radius }
+    pub fn new(n_ants: i32, food: i32, max_iterations: i64, iterations_per_frame: i64, radius: u8, alpha: f64) -> Self {
+        Params { n_ants, food, max_iterations, iterations_per_frame, radius, k1: 0.0, k2: 0.0, alpha }
     }
 }
 
 impl Default for Params {
     fn default() -> Self {
-        Params::new(100, 250, 100_000_000, 10_000, 1)
+        Params::new(100, 250, 100_000_000, 10_000, 1, 10.0)
     }
 }

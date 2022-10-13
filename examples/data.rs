@@ -2,7 +2,7 @@
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 
-use ants::ants::AntPlugin;
+use ants::ants::{AntPlugin, DataPlugin};
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.1, 0.4, 0.1);
 
@@ -23,13 +23,17 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_plugin(AntPlugin {
-            n_ants: 100,
-            n_food: 4000,
-            board_size: 100,
-            ant_timer: 0.000001,
-            iterations_per_frame: 10_000,
-            max_iterations: 1_000_000,
+            n_ants: 10,
+            n_food: 1,
+            board_size: 50,
+            ant_timer: 0.01,
+            iterations_per_frame: 1,
+            max_iterations: 1_000_000_000,
             radius: 1,
+            alpha: 10.0
+        })
+        .add_plugin(DataPlugin {
+            data_path: "data/dataset_4.txt".to_string()
         })
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_startup_system(start_camera)

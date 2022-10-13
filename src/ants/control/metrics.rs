@@ -15,6 +15,8 @@ pub fn calculate_metrics(
 ) {
     match *state {
         SimulationState::FINISHED => {
+            println!("Finished");
+
             calculate_biggest_and_number_of_cluster(board, query_cells);
             
             println!("time: {} seconds", stopwatch.total.as_secs());

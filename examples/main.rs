@@ -2,7 +2,7 @@
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 
-use ants::ants::AntPlugin;
+use ants::ants::{AntPlugin, ItemPlugin, MetricsPlugin};
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.1, 0.4, 0.1);
 
@@ -23,14 +23,17 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_plugin(AntPlugin {
-            n_ants: 3,
-            n_food: 5,
-            board_size: 10,
-            ant_timer: 0.01,
-            iterations_per_frame: 1,
-            max_iterations: 1_000,
+            n_ants: 50,
+            n_food: 4000,
+            board_size: 100,
+            ant_timer: 0.1,
+            iterations_per_frame: 10000,
+            max_iterations: 1_000_000,
             radius: 1,
+            alpha: 1.0
         })
+        .add_plugin(ItemPlugin)
+        .add_plugin(MetricsPlugin)
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_startup_system(start_camera)
         .run();

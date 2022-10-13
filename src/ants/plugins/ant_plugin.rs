@@ -12,6 +12,7 @@ pub struct AntPlugin {
     pub board_size: i32,
     pub ant_timer: f32,
     pub radius: u8,
+    pub alpha: f64,
 }
 
 impl Default for AntPlugin {
@@ -24,6 +25,7 @@ impl Default for AntPlugin {
             board_size: 70,
             ant_timer: 0.000001,
             radius: 1,
+            alpha: 1.0,
         }
     }
 }
@@ -36,6 +38,7 @@ impl Plugin for AntPlugin {
             self.max_iterations,
             self.iterations_per_frame,
             self.radius,
+            self.alpha
         ))
         .init_resource::<board::Board>()
         .insert_resource(simulation_state::SimulationState::INITIALIZED)
@@ -44,12 +47,9 @@ impl Plugin for AntPlugin {
         .insert_resource(ant::AntTimer(Timer::from_seconds(self.ant_timer, true)))
         .add_startup_system_to_stage(StartupStage::PreStartup, board::setup_board)
         .add_startup_system(ant::setup_ants)
-        .add_startup_system(item::setup_item)
         .add_system(ant::move_ant)
         .add_system(cell::draw_food)
         .add_system(ant::draw_ant)
-        .add_system(metrics::calculate_metrics)
-        .add_system(input::keyboard_input)
-        .add_system(time::measuere_time);
+        .add_system(input::keyboard_input);
     }
 }

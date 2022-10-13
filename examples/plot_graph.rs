@@ -12,14 +12,16 @@ fn main() {
 
 fn plot_prob_func() {
 
+    let ant = Ant::new(0, 0, 0.1, 0.1);
+
     let prob =
-        Plot::from_function(|x| Ant::prob(x), 0., 1.).line_style(
+        Plot::from_function(|x| ant.prob(x), 0., 1.).line_style(
             LineStyle::new()
                 .colour("#35C788")
         );
 
     let one_minus_prob =
-        Plot::from_function(|x| (1.0 - Ant::prob(x)), 0., 1.).line_style(LineStyle::new().colour("burlywood"));
+        Plot::from_function(|x| (1.0 - ant.prob(x)), 0., 1.).line_style(LineStyle::new().colour("burlywood"));
 
     let v = ContinuousView::new()
         .add(one_minus_prob)

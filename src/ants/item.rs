@@ -1,22 +1,28 @@
+
 use bevy::prelude::*;
 
-use super::{board::Board, params::Params, cell::Cell};
+use super::{board::Board, params::{Params, ITEM_COLOR}, cell::Cell};
 
 #[derive(Component)]
 pub struct Item {
-    data: Vec<f64>,
+    pub label: String,
+    pub color: Color,
+    pub data: Vec<f64>,
 }
 
 impl Item {
     pub fn difference(&self, other: &Item) -> f64 {
-        let mut diff = 0.0;
-        for i in 0..self.data.len() {
-            diff += self.data[i] - other.data[i];
+        let mut diff = 0.0f64;
+
+        if self.data.len() != other.data.len() {
+            panic!("Tried to compare different data dimensions");
         }
-        diff
+        for i in 0..self.data.len() {
+            diff += (self.data[i] - other.data[i]).powi(2) ;
+        }
+        diff.sqrt()
     }
 }
-
 
 pub fn setup_item(
     mut commands: Commands,
@@ -37,7 +43,11 @@ pub fn setup_item(
         if cell.item.is_none() {
             let entity = commands
                 .spawn()
-                .insert(Item { data: vec![0.0] } )
+                .insert(Item {
+                    label: "dead_ant".to_string(),
+                    color: ITEM_COLOR,
+                    data: vec![0.0] 
+                })
                 .id();
 
             cell.item = Some(entity);
