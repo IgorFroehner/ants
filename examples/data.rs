@@ -25,15 +25,15 @@ fn main() {
         .add_plugin(AntPlugin {
             n_ants: 30,
             n_food: 1,
-            board_size: 70,
-            ant_timer: 0.0000001,
-            iterations_per_frame: 1_000_000,
-            max_iterations: 10_000_000,
-            radius: 5,
-            alpha: 10.0
+            board_size: 40,
+            ant_timer: 0.01,
+            iterations_per_frame: 10_000,
+            max_iterations: 1_000_000,
+            radius: 1,
+            alpha: 20.0
         })
         .add_plugin(DataPlugin {
-            data_path: "data/dataset_15.txt".to_string()
+            data_path: "data/dataset_4.txt".to_string()
         })
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_startup_system(start_camera)
