@@ -1,8 +1,8 @@
 use std::time::Duration;
 
-use bevy::{prelude::*};
+use bevy::prelude::*;
 
-use crate::ants::{ant, board, cell, input, item, metrics, params, simulation_state, time};
+use crate::ants::{ant, board, cell, input, params, simulation_state, time};
 
 pub struct AntPlugin {
     pub n_ants: i32,

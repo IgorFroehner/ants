@@ -37,7 +37,7 @@ impl Ant {
 
     pub fn prob(&self, x: f64) -> f64 {
         // (x / self.k2 + x).powf(2.0).min(0.0).max(1.0)
-        1.0 / (1.0 + (E.powf(-E.powf(3.0) * (x - 0.43261))))
+        1.0 / (1.0 + (E.powf(-32.0 * (x - 0.35))))
     }
 
     // pub fn ant_action(&mut self, cell: &mut Cell, score: f64, ending: bool) -> bool {
@@ -109,26 +109,37 @@ pub fn setup_ants(
 }
 
 pub fn draw_ant(
-    mut query: Query<(&Ant, &mut Transform, &mut Handle<Image>)>,
+    mut query: Query<(&Ant, &mut Transform, &mut Handle<Image>, Entity)>,
+    mut commands: Commands,
     asset_server: Res<AssetServer>,
     board: Res<Board>,
     windows: Res<Windows>,
+    state: ResMut<SimulationState>,
 ) {
-    let window = windows.primary();
+    match *state {
+        SimulationState::FINISHING => {
+            for (_, _, _, entity) in query.iter() {
+                commands.entity(entity).despawn();
+            }
+        },
+        _ => {
+            let window = windows.primary();
 
-    let cell_size: f32 = board.cell_size(window);
-    let first_position = board.first_position(window);
+            let cell_size: f32 = board.cell_size(window);
+            let first_position = board.first_position(window);
 
-    for (ant, mut transform, mut image) in query.iter_mut() {
-        *image = if ant.item.is_some() {
-            asset_server.load(ANT_LOADED_IMAGE)
-        } else {
-            asset_server.load(ANT_IMAGE)
-        };
+            for (ant, mut transform, mut image, _) in query.iter_mut() {
+                *image = if ant.item.is_some() {
+                    asset_server.load(ANT_LOADED_IMAGE)
+                } else {
+                    asset_server.load(ANT_IMAGE)
+                };
 
-        let translation = &mut transform.translation;
-        translation.x = first_position + (ant.x as f32) * cell_size;
-        translation.y = first_position + (ant.y as f32) * cell_size;
+                let translation = &mut transform.translation;
+                translation.x = first_position + (ant.x as f32) * cell_size;
+                translation.y = first_position + (ant.y as f32) * cell_size;
+            }
+        }
     }
 }
 
@@ -157,11 +168,14 @@ pub fn move_ant(
             }
         },
         SimulationState::FINISHING => {
-            let ant_loaded = ant_actions(&mut query_ants, &board, &params, &mut query_cells, &query_item, true);
+            while ant_actions(&mut query_ants, &board, &params, &mut query_cells, &query_item, true) {}
+            // let ant_loaded = ;
 
-            if !ant_loaded {
+            // if !ant_loaded {
                 *state = SimulationState::FINISHED;
-            }
+            // }
+
+            println!("Finished");
         },
         _ => { },
     };

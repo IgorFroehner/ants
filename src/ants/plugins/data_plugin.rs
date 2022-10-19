@@ -1,12 +1,10 @@
-use std::{fs, io::BufRead};
-
-use thiserror::Error;
-
 use bevy::{prelude::*, utils::HashMap};
+use thiserror::Error;
+use std::fs;
 
 use crate::ants::{board::Board, cell::Cell, item::Item};
 
-const colors: [Color; 16] = [
+const COLORS: [Color; 16] = [
     Color::ALICE_BLUE,
     Color::AQUAMARINE,
     Color::BLUE,
@@ -19,7 +17,7 @@ const colors: [Color; 16] = [
     Color::AZURE,
     Color::BISQUE,
     Color::OLIVE,
-    Color::SEA_GREEN,
+    Color::INDIGO,
     Color::MIDNIGHT_BLUE,
     Color::TURQUOISE,
     Color::ORANGE_RED
@@ -66,7 +64,7 @@ pub fn set_data_items(
             let mut cell = query.get_mut(board.get_cell_entity(x, y)).unwrap();
 
             let i: usize = label.parse::<i32>().unwrap().try_into().unwrap();
-            let color = colors[i];
+            let color = COLORS[i];
 
             if cell.item.is_none() {
                 let entity = commands

@@ -1,7 +1,7 @@
 
 use bevy::prelude::*;
 
-use super::{params::{ITEM_COLOR, BOARD_COLOR}, item::Item};
+use super::{params::BOARD_COLOR, item::Item};
 
 #[derive(Component, Clone)]
 pub struct Cell {
